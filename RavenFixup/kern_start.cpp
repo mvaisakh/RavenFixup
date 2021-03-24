@@ -3,6 +3,7 @@
 //  Polaris22Fixup
 //
 //  Copyright © 2020 osy86. All rights reserved.
+//  Copyright © 2021 mvaisakh. All rights reserved.
 //
 
 #include <Headers/plugin_start.hpp>
@@ -17,7 +18,7 @@ static const int kPathMaxLen = 1024;
 
 #pragma mark - Patches
 
-static const int kEllesmereDeviceId = 0x67DF;
+static const int kVega10DeviceId = 0x67DF;
 
 static const uint8_t kAmdBronzeMtlAddrLibGetBaseArrayModeReturnOriginal[] = {
     0xb8, 0x02, 0x00, 0x00, 0x00, 0x0f, 0x43, 0xc1, 0xeb,
@@ -49,18 +50,18 @@ static const char kDyldCachePath[kPathMaxLen] = "/private/var/db/dyld/dyld_share
 
 static const char kBigSurDyldCachePath[kPathMaxLen] = "/System/Library/dyld/dyld_shared_cache_x86_64h";
 
-static const char *kAmdRadeonX4000HwLibsPath[] { "/System/Library/Extensions/AMDRadeonX4000HWServices.kext/Contents/PlugIns/AMDRadeonX4000HWLibs.kext/Contents/MacOS/AMDRadeonX4000HWLibs" };
+static const char *kAmdRadeonX5000HwLibsPath[] { "/System/Library/Extensions/AMDRadeonX4000HWServices.kext/Contents/PlugIns/AMDRadeonX5000HWLibs.kext/Contents/MacOS/AMDRadeonX5000HWLibs" };
 
-static const char *kAmdRadeonX4000Path[] { "/System/Library/Extensions/AMDRadeonX4000.kext/Contents/MacOS/AMDRadeonX4000" };
+static const char *kAmdRadeonX5000Path[] { "/System/Library/Extensions/AMDRadeonX5000.kext/Contents/MacOS/AMDRadeonX5000" };
 
 enum {
-    kAmdRadeonX4000=0,
-    kAmdRadeonX4000HwLibs,
+    kAmdRadeonX5000=0,
+    kAmdRadeonX5000HwLibs,
 };
 
 static KernelPatcher::KextInfo kAMDHWLibsInfo[] = {
-    [kAmdRadeonX4000] = { "com.apple.kext.AMDRadeonX4000", kAmdRadeonX4000Path, arrsize(kAmdRadeonX4000Path), {true}, {}, KernelPatcher::KextInfo::Unloaded },
-    [kAmdRadeonX4000HwLibs] = { "com.apple.kext.AMDRadeonX4000HWLibs", kAmdRadeonX4000HwLibsPath, arrsize(kAmdRadeonX4000HwLibsPath), {true}, {}, KernelPatcher::KextInfo::Unloaded },
+    [kAmdRadeonX5000] = { "com.apple.kext.AMDRadeonX5000", kAmdRadeonX5000Path, arrsize(kAmdRadeonX5000Path), {true}, {}, KernelPatcher::KextInfo::Unloaded },
+    [kAmdRadeonX5000HwLibs] = { "com.apple.kext.AMDRadeonX5000HWLibs", kAmdRadeonX5000HwLibsPath, arrsize(kAmdRadeonX5000HwLibsPath), {true}, {}, KernelPatcher::KextInfo::Unloaded },
 };
 
 static mach_vm_address_t orig_cs_validate {};
@@ -159,10 +160,10 @@ static int patched_IsEarlySAMUInitEnabled(void *ctx) {
 
 static int patched_getHardwareInfo(void *obj, uint16_t *hwInfo) {
     int ret = FunctionCast(patched_getHardwareInfo, orig_getHardwareInfo)(obj, hwInfo);
-    DBGLOG(MODULE_SHORT, "AMDRadeonX4000_AMDAccelDevice::getHardwareInfo: return 0x%08X");
+    DBGLOG(MODULE_SHORT, "AMDRadeonX5000_AMDAccelDevice::getHardwareInfo: return 0x%08X");
     if (ret == 0) {
         SYSLOG(MODULE_SHORT, "getHardwareInfo: deviceId = 0x%x", *hwInfo);
-        *hwInfo = kEllesmereDeviceId;
+        *hwInfo = kVega10DeviceId;
     }
     return ret;
 }
@@ -214,16 +215,16 @@ static void pluginStart() {
     error = lilu.onKextLoad(kAMDHWLibsInfo, arrsize(kAMDHWLibsInfo), [](void *user, KernelPatcher &patcher, size_t index, mach_vm_address_t address, size_t size){
         DBGLOG(MODULE_SHORT, "processing AMDRadeonX4000HWLibs");
         for (size_t i = 0; i < arrsize(kAMDHWLibsInfo); i++) {
-            if (i == kAmdRadeonX4000 && kAMDHWLibsInfo[i].loadIndex == index) {
+            if (i == kAmdRadeonX5000 && kAMDHWLibsInfo[i].loadIndex == index) {
                 KernelPatcher::RouteRequest amd_requests[] {
-                    KernelPatcher::RouteRequest("__ZN29AMDRadeonX4000_AMDAccelDevice15getHardwareInfoEP24_sAMD_GET_HW_INFO_VALUES", patched_getHardwareInfo, orig_getHardwareInfo),
+                    KernelPatcher::RouteRequest("__ZN29AMDRadeonX5000_AMDAccelDevice15getHardwareInfoEP24_sAMD_GET_HW_INFO_VALUES", patched_getHardwareInfo, orig_getHardwareInfo),
                 };
                 if (patcher.routeMultiple(index, amd_requests, address, size, true, true)) {
                     DBGLOG(MODULE_SHORT, "patched getHardwareInfo");
                 } else {
                     SYSLOG(MODULE_SHORT, "failed to patch getHardwareInfo: %d", patcher.getError());
                 }
-            } else if (i == kAmdRadeonX4000HwLibs && kAMDHWLibsInfo[i].loadIndex == index) {
+            } else if (i == kAmdRadeonX5000HwLibs && kAMDHWLibsInfo[i].loadIndex == index) {
                 KernelPatcher::RouteRequest amd_requests[] {
                     KernelPatcher::RouteRequest("_PECI_IsEarlySAMUInitEnabled", patched_IsEarlySAMUInitEnabled, orig_IsEarlySAMUInitEnabled),
                 };
