@@ -18,7 +18,7 @@ static const int kPathMaxLen = 1024;
 
 #pragma mark - Patches
 
-static const int kVega10DeviceId = 0x67DF;
+static const int kVega10DeviceId = 0x6860;
 
 static const uint8_t kAmdBronzeMtlAddrLibGetBaseArrayModeReturnOriginal[] = {
     0xb8, 0x02, 0x00, 0x00, 0x00, 0x0f, 0x43, 0xc1, 0xeb,
