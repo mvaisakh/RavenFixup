@@ -50,7 +50,7 @@ static const char kDyldCachePath[kPathMaxLen] = "/private/var/db/dyld/dyld_share
 
 static const char kBigSurDyldCachePath[kPathMaxLen] = "/System/Library/dyld/dyld_shared_cache_x86_64h";
 
-static const char *kAmdRadeonX5000HwLibsPath[] { "/System/Library/Extensions/AMDRadeonX4000HWServices.kext/Contents/PlugIns/AMDRadeonX5000HWLibs.kext/Contents/MacOS/AMDRadeonX5000HWLibs" };
+static const char *kAmdRadeonX5000HwLibsPath[] { "/System/Library/Extensions/AMDRadeonX5000HWServices.kext/Contents/PlugIns/AMDRadeonX5000HWLibs.kext/Contents/MacOS/AMDRadeonX5000HWLibs" };
 
 static const char *kAmdRadeonX5000Path[] { "/System/Library/Extensions/AMDRadeonX5000.kext/Contents/MacOS/AMDRadeonX5000" };
 
@@ -213,7 +213,7 @@ static void pluginStart() {
         SYSLOG(MODULE_SHORT, "failed to register onPatcherLoad method: %d", error);
     }
     error = lilu.onKextLoad(kAMDHWLibsInfo, arrsize(kAMDHWLibsInfo), [](void *user, KernelPatcher &patcher, size_t index, mach_vm_address_t address, size_t size){
-        DBGLOG(MODULE_SHORT, "processing AMDRadeonX4000HWLibs");
+        DBGLOG(MODULE_SHORT, "processing AMDRadeonX5000HWLibs");
         for (size_t i = 0; i < arrsize(kAMDHWLibsInfo); i++) {
             if (i == kAmdRadeonX5000 && kAMDHWLibsInfo[i].loadIndex == index) {
                 KernelPatcher::RouteRequest amd_requests[] {
